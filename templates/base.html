@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!--[if IE 8]> 				 <html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width" />
+
+	<title>Soroban</title>
+
+	<link rel="stylesheet" href="static/css/normalize.css" />
+	<link rel="stylesheet" href="static/css/foundation.css" />
+	<!--Modernizr acts as a shim for HTML5 elements for older
+		browsers as well as detection for mobile devices.-->
+	<script src="static/js/vendor/custom.modernizr.js"></script>
+</head>
+<body>
+	<nav class="top-bar">
+		<ul class="title-area">
+			<li class="name"><h1><a href="/">Soroban Capital</a></h1></li>
+		</ul>
+	</nav>
+	{% block body %}
+	{% endblock %}
+
+
+	<!-- Check for Zepto support, load jQuery if necessary -->
+	<script>
+	document.write('<script src=' +
+	('__proto__' in {} ? 'js/vendor/zepto' : 'js/vendor/jquery') +
+	'.js><\/script>')
+	</script>
+  
+	<script src="js/foundation.min.js"></script>
+	<script>
+		$(document).foundation();
+	</script>
+</body>
+</html>
+</body>
