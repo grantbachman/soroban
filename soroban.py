@@ -7,9 +7,43 @@ from httplib import BadStatusLine
 from flask import Flask, render_template, redirect, url_for
 from pandas.io.data import DataReader
 from datetime import datetime, date, timedelta
-
+import psycopg2
+from config import *
+from contextlib import closing
+import pprint
 
 app = Flask(__name__)
+
+if os.getenv('ENV_MODE') == 'production':
+	app.config.from_object('prod_config')
+else:
+	app.config.from_object('dev_config')
+
+# Returns the connection
+def connect_db():
+	if app.config['ENV_MODE'] == 'development':
+		vars = (app.config['DBNAME'], app.config['HOST'])
+		return psycopg2.connect("dbname=%s host=%s" % vars)
+	elif app.config['ENV_MODE'] == 'production':
+		vars = (app.config['DBNAME'], app.config['USER'], app.config['PASSWORD'], app.config['HOST'])
+		return psycopg2.connect("dbname=%s user=%s password=%s host=%s" % vars)	
+# Creates the table if it doesn't exist
+def init_table():
+		with closing(connect_db()) as db:
+			db.cursor().execute("CREATE TABLE IF NOT EXISTS tweets \
+				(id serial, \
+				symbol varchar(6) not null, \
+				target numeric(9,2) not null, \
+				tweet_time timestamp with time zone not null, \
+				tweeted boolean not null)"
+			)
+			db.commit()
+
+conn = connect_db()
+cur = conn.cursor()
+cur.execute("SELECT * FROM tweets")
+rows = cur.fetchall()
+pprint.pprint(rows)
 
 @app.route('/')
 def home():
@@ -81,4 +115,4 @@ def ratings():
     return render_template('ratings.html',stock=stock)
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	app.run()
