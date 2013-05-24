@@ -8,42 +8,44 @@ from flask import Flask, render_template, redirect, url_for
 from pandas.io.data import DataReader
 from datetime import datetime, date, timedelta
 import psycopg2
-from config import *
+import config
 from contextlib import closing
 import pprint
 
 app = Flask(__name__)
 
-if os.getenv('ENV_MODE') == 'production':
-	app.config.from_object('prod_config')
-else:
-	app.config.from_object('dev_config')
+app.config.from_object('config.get_env')
 
 # Returns the connection
 def connect_db():
-	if app.config['ENV_MODE'] == 'development':
-		vars = (app.config['DBNAME'], app.config['HOST'])
-		return psycopg2.connect("dbname=%s host=%s" % vars)
-	elif app.config['ENV_MODE'] == 'production':
-		vars = (app.config['DBNAME'], app.config['USER'], app.config['PASSWORD'], app.config['HOST'])
+	env = config.get_env()
+	if env['ENV_MODE'] == 'production':
+		vars = (env['DBNAME'], env['USER'], env['PASSWORD'], env['HOST'])
 		return psycopg2.connect("dbname=%s user=%s password=%s host=%s" % vars)	
+	else:
+		vars = (env['DBNAME'], env['HOST'])
+		return psycopg2.connect("dbname=%s host=%s" % vars)
 # Creates the table if it doesn't exist
+
 def init_table():
 		with closing(connect_db()) as db:
 			db.cursor().execute("CREATE TABLE IF NOT EXISTS tweets \
 				(id serial, \
 				symbol varchar(6) not null, \
 				target numeric(9,2) not null, \
-				tweet_time timestamp with time zone not null, \
-				tweeted boolean not null)"
+				raising_target boolean not null, \
+				tweeted boolean not null default false, \
+				created_at timestamp not null, \
+				tweeted_at timestamp )"
 			)
 			db.commit()
 
-conn = connect_db()
-cur = conn.cursor()
-cur.execute("SELECT * FROM tweets")
-rows = cur.fetchall()
-pprint.pprint(rows)
+def print_table():
+	conn = connect_db()
+	cur = conn.cursor()
+	cur.execute("SELECT * FROM tweets")
+	rows = cur.fetchall()
+	pprint.pprint(rows)
 
 @app.route('/')
 def home():
@@ -68,16 +70,19 @@ def get_stock_history(stock):
 		pass
 	return prices
 
-def get_all_stock_histories():
-	stocks = get_stock_list()
+def get_all_stock_histories(from_file=False):
 	prices,volumes = {},{}
-	for stock in stocks:
-		x = get_stock_history(stock[0])
-		if x is not None:
-			prices[stock[0]] = x["Adj Close"]	
-			volumes[stock[0]] = x["Volume"]
-			#print stock
-	return [pd.DataFrame(prices), pd.DataFrame(volumes)]
+	if from_file == True:
+		prices = pd.read_csv('prices.csv', index_col = 0)
+		volumes = pd.read_csv('volumes.csv', index_col = 0)		
+	else:
+		stocks = get_stock_list()
+		for stock in stocks:
+			x = get_stock_history(stock[0])
+			if x is not None:
+				prices[stock[0]], volumes[stock[0]] = x["Adj Close"], x["Volume"]
+				prices, volumes = pd.DataFrame(prices), pd.DataFrame(volumes)
+	return [prices, volumes]
 
 
 def get_targets(prices):
@@ -101,13 +106,29 @@ def get_ratings(prices):
 	market_symbols = set(prices.columns) - set(out_symbols) - set(under_symbols) 	
 	return [under_symbols, market_symbols, out_symbols]
 
-def calc():
-	prices, volumes = get_all_stock_histories()
+def calc(from_file=False):
+	prices, volumes = get_all_stock_histories(from_file)
 	s_min_vol = volumes.mean() > 1000000 # Boolean Series
 	df_min_vol_stocks = prices[list(s_min_vol.index[s_min_vol==True])]
 
 	#l_underperform, l_marketperform, l_outperform = get_ratings(df_min_vol_stocks)
+	s_lower_targets, s_rise_targets = get_targets(df_min_vol_stocks)
 	return [s_lower_targets, s_rise_targets]	
+
+def save_all_stocks(lower,higher):
+	with closing(connect_db()) as db:
+		for i in range(len(lower)):
+			print "saving %s" % lower.index[i]
+			db.cursor().execute("""INSERT INTO tweets
+								 (symbol, target, raising_target, created_at)
+								 VALUES (%s, %s, %s, %s);""", (lower.index[i], lower[i], False, datetime.now()))
+			db.commit()
+		for i in range(len(higher)):
+			print "saving %s" % higher.index[i]
+			db.cursor().execute("""INSERT INTO tweets
+								(symbol, target, raising_target, created_at)
+								VALUES (%s, %s, %s, %s);""", (higher.index[i], higher[i], True, datetime.now()))
+			db.commit()
 
 @app.route('/ratings')
 def ratings():
