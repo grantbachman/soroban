@@ -2,40 +2,35 @@ import os
 import urlparse
 import re
 
-# Read from .env file (if it exists), otherwise read from ENV variables
+# reads env vars from .dev_env and .prod_env files
 
+# returns a hash of environment variables
 def get_env():
+	files = {'development': '.dev_env',
+			  'production': '.prod_env'}
+
+	# if no env var is set, set to development
+	if not os.environ.get('ENV_MODE'):
+		os.environ['ENV_MODE'] = 'development'
+
 	try:
-		with open('.env') as f:
+		with open(files[os.environ['ENV_MODE']]) as f:
 			content = f.read()
 	except IOError:
-			content = ''
+		pass
 
-	if content:
-		env = {}
-		for line in content.splitlines():
-			match = re.match(r'\A([A-Za-z0-9_]+)=(.*)\Z',line)
-			env[match.group(1)]=match.group(2)
-		return env
-	else:
-		return os.environ
+	env = {}
+	# set env-dictionary by parsing file
+	for line in content.splitlines():
+		match = re.match(r'\A([A-Za-z0-9_]+)=(.*)\Z',line)
+		env[match.group(1)]=match.group(2)
 
-def dev_config():
-	return {
-		'ENV_MODE' : 'development',
-		'DBNAME' : 'soroban',
-		'HOST' : 'localhost',
-		'DEBUG' : True
-	}
-
-def prod_config():
-	urlparse.uses_netloc.append('postgres')
-	url = urlparse.urlparse(os.environ['DATABASE_URL'])
-	return {
-		'ENV_MODE' : 'production',
-		'DBNAME' : url.path[1:],
-		'USER' : url.username,
-		'PASSWORD' : url.password,
-		'HOST' : url.hostname,
-		'DEBUG' : False
-	}
+	# parse Heroku's DATABASE_URL variable
+	if env['ENV_MODE'] == 'production': 
+		urlparse.uses_netloc.append('postgres')
+		url = urlparse.urlparse(env['DATABASE_URL'])
+		env['DBNAME'] = url.path[1:]
+		env['USER'] = url.username
+		env['PASSWORD'] = url.password
+		env['HOST'] = url.hostname
+	return env
