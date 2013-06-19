@@ -2,28 +2,42 @@
 
 from datetime import datetime, timedelta
 import pandas as pd
+import random
 from pandas.io.data import DataReader
 from urllib2 import HTTPError
 from httplib import BadStatusLine
 
+
 # For determining future stock prices
-class Predict:
+class Predict(object):
 
-	def __init__(self, stocks):
-		pass	
+	def __init__(self, prices):
+		self.prices = prices
 
+	# Make find_raise/find_lower functions just one function
+	def find_raise_targets(self,lookback_days,up_min,up_max):
+		bool_raise = self.prices.ix[-1]/self.prices.ix[lookback_days] - 1 > 0.2
+		raise_symbols = list(bool_raise.index[bool_raise==True])
+		s_raise_targets = self.prices.ix[-1][raise_symbols].apply(\
+			lambda x: random.uniform(x*up_min,x*up_max)) 
+		return s_raise_targets
 
+	def find_lower_targets(self,lookback_days,down_max,down_min):
+		bool_lower = self.prices.ix[-1]/self.prices.ix[lookback_days] - 1 < -0.2
+		lower_symbols = list(bool_lower.index[bool_lower==True])
+		s_lower_targets = self.prices.ix[-1][lower_symbols].apply(\
+			lambda x: random.uniform(x*down_max,x*down_min)) 
+		return s_lower_targets
 
 
 
 # For pulling and filtering stocks
-class StockData:
-
-	prices = None
-	volumes = None
+class StockData(object):
 
 	def __init__(self):
 		self.stock_list = self.retrieve_stock_list()
+		self.prices = None
+		self.volumes = None
 
 	# returns a list of tuples (symbol, name)
 	def retrieve_stock_list(self):
