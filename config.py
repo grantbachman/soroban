@@ -9,7 +9,7 @@ def get_env():
 	files = {'development': '.dev_env',
 			  'production': '.prod_env'}
 
-	# if no env var is set, set to development
+	# if no ENV_MODE var is set, set to development
 	if not os.environ.get('ENV_MODE'):
 		os.environ['ENV_MODE'] = 'development'
 

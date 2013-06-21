@@ -29,6 +29,8 @@ class Predict(object):
 			lambda x: random.uniform(x*down_max,x*down_min)) 
 		return s_lower_targets
 
+	###### TODO #######
+	# Need to write tests to save predictions
 
 
 # For pulling and filtering stocks
