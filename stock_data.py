@@ -6,6 +6,7 @@ import random
 from pandas.io.data import DataReader
 from urllib2 import HTTPError
 from httplib import BadStatusLine
+from connect import DBConnection
 
 
 # For determining future stock prices
@@ -29,10 +30,15 @@ class Predict(object):
 			lambda x: random.uniform(x*down_max,x*down_min)) 
 		return s_lower_targets
 
-	###### TODO #######
-	# Need to write tests to save predictions
-
-
+	def save_targets(self, s_stocks, raise_target):
+		conn = DBConnection()	
+		for i in range(len(s_stocks)):
+			symbol = s_stocks.index[i]		
+			target = s_stocks[i]
+			successful = conn.save_tweet(symbol, target, raise_target)
+			if not successful:
+				return False
+		return True
 # For pulling and filtering stocks
 class StockData(object):
 

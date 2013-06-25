@@ -6,17 +6,18 @@ import pprint
 from twitter import *
 from datetime import datetime, timedelta
 from contextlib import closing
+from connect import DBConnection
+from config import get_env
 
 if __name__ == '__main__':
-	env = config.get_env()
-
+	env = get_env()
 	# only execute Mon-Fri 8am-4pm EST
 	est = (datetime.utcnow() + timedelta(hours=-4)).timetuple()
 	# est[6] = day (Mon = 0, Fri = 4)
 	# est[3] = hour (8am = 8, 3pm = 16)
 	if est[6] in range(5) and est[3] in range(8,16):
-		conn = s.connect_db()
-		cur = conn.cursor()
+		conn = DBConnection()
+		cur = conn.connection.cursor()
 		cur.execute("""SELECT * FROM tweets WHERE tweeted = False""")
 		rows = cur.fetchall()
 		num_rows = len(rows)
@@ -37,9 +38,8 @@ if __name__ == '__main__':
 			status = "%s our target for $%s to $%s." % (move, stock[1], stock[2])
 			print status
 			t.statuses.update(status=status)
-			altering.append(stock[0])
-			cur.execute("""UPDATE tweets SET tweeted = %s, tweeted_at = %s WHERE id = %s""", (True, datetime.now(), stock[0]))
-			conn.commit()
+			conn.mark_as_tweeted(stock[0])
+			conn.connection.commit()
 			num_rows -= 1
 	else:
 		print "Sorry, the day is over."
