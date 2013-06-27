@@ -4,3 +4,5 @@ env
 .env
 .dev_env
 .prod_env
+*.csv
+*.xlsx

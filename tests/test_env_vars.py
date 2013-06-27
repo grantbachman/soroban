@@ -8,26 +8,23 @@ class TestEnvVars(unittest.TestCase):
 		pass
 
 	def tearDown(self):
-		print os.environ['ENV_MODE']
-		del os.environ['ENV_MODE'] 
+		os.environ.pop('ENV_MODE', None)
+		os.environ.pop('HOST', None)
+		os.environ.pop('DBNAME', None)
+
+	def test_envmode_is_dev_when_not_set(self):
+		config.get_env()	
+		assert os.environ.get('ENV_MODE') == 'development'
 
 	def test_correct_vars_in_dev(self):
-		os.environ['ENV_MODE'] = 'development'
-		vars = config.get_env()
-		print vars['ENV_MODE']
-		assert vars['HOST'] == 'localhost'
-		assert vars['DBNAME'] == 'soroban'
+		var = config.get_env()
+		assert var['HOST'] == 'localhost'
+		assert var['DBNAME'] == 'soroban'
+		assert os.environ.get('HOST') == 'localhost'	
+		assert os.environ.get('DBNAME') == 'soroban'
 
 	def test_correct_vars_in_prod(self):
 		os.environ['ENV_MODE'] = 'production'
-		vars = config.get_env()
-		print vars['ENV_MODE']
-		assert vars['DBNAME']
-		assert vars['USER']
-		assert vars['PASSWORD']
-
-	def test_correct_vars_no_env(self):
-		vars = config.get_env()
-		print vars['ENV_MODE']
-		assert vars['HOST'] == 'localhost'
-		assert vars['DBNAME'] == 'soroban'
+		var = config.get_env()
+		assert os.environ.get('ENV_MODE') == 'production'
+		assert var['ENV_MODE'] == 'production'
