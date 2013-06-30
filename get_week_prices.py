@@ -8,7 +8,7 @@ if __name__ == '__main__':
 	count_untweeted = conn.get_num_untweeted_stocks()
 	if est[6] == 6 or count_untweeted == 0:
 		sd = StockData()
-		sd.set_histories(from_file=False)	
+		sd.set_histories(from_file=False,num=5000)	
 		p = Predict(sd.prices)
 		raise_targets = p.find_raise_targets(-10,1.15,1.25)
 		lower_targets = p.find_lower_targets(-30,.75,.85)

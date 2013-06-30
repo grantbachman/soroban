@@ -18,10 +18,8 @@ class DBConnection(object):
 		env = self.env
 		if env['ENV_MODE'] == 'production':
 			vars = (env['DBNAME'], env['USER'], env['PASSWORD'], env['HOST'])
-			print "in production"
 			return psycopg2.connect("dbname=%s user=%s password=%s host=%s" % vars)	
 		else:
-			print "not in production"
 			vars = (env['DBNAME'], env['HOST'])
 			return psycopg2.connect("dbname=%s host=%s" % vars)	
 
