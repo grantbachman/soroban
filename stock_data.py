@@ -49,6 +49,7 @@ class StockData(object):
 
 	# returns a list of tuples (symbol, name)
 	def retrieve_stock_list(self):
+		print "Getting list of stocks and symbols."
 		nyse = [tuple(x.strip().split('\t')) for x in open("NYSE.txt")]		
 		nyse.pop(0)
 		nasdaq = [tuple(x.strip().split('\t')) for x in open("NASDAQ.txt")]		
@@ -59,6 +60,7 @@ class StockData(object):
 
 	# returns a dataframe of prices
 	def get_history(self, stock):
+		print "Retrieving data for %s" % stock
 		prices = None
 		try:
 			start_date = datetime.today() - timedelta(days=365)
@@ -73,12 +75,13 @@ class StockData(object):
 			prices = pd.read_csv('prices.csv', index_col=0)
 			volumes = pd.read_csv('volumes.csv', index_col=0)
 		else:
-			stocks = retrieve_stock_list()
+			prices, volumes = pd.DataFrame(), pd.DataFrame()
+			stocks = self.retrieve_stock_list()
 			for stock in stocks:
-				history = get_history(stock[0])	
+				history = self.get_history(stock[0])	
 				if history is not None:
 					prices[stock[0]] = history["Adj Close"]
-					volumes[stock[0]] = history["Volumes"]
+					volumes[stock[0]] = history["Volume"]
 					prices, volumes = pd.DataFrame(prices), pd.DataFrame(volumes)
 		self.prices = prices
 		self.volumes = volumes

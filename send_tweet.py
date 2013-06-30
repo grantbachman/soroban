@@ -15,7 +15,8 @@ if __name__ == '__main__':
 	est = (datetime.utcnow() + timedelta(hours=-4)).timetuple()
 	# est[6] = day (Mon = 0, Fri = 4)
 	# est[3] = hour (8am = 8, 3pm = 16)
-	if est[6] in range(5) and est[3] in range(8,16):
+	#if est[6] in range(5) and
+	if est[3] in range(8,16):
 		conn = DBConnection()
 		cur = conn.connection.cursor()
 		cur.execute("""SELECT * FROM tweets WHERE tweeted = False""")
