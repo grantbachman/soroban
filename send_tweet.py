@@ -16,7 +16,8 @@ if __name__ == '__main__':
 	# est[6] = day (Mon = 0, Fri = 4)
 	# est[3] = hour (8am = 8, 3pm = 16)
 	#if est[6] in range(5) and
-	if est[3] in range(8,16):
+	if est[3] in range(8,18):
+		print "eligible date/time"
 		conn = DBConnection()
 		cur = conn.connection.cursor()
 		cur.execute("""SELECT * FROM tweets WHERE tweeted = False""")
@@ -28,7 +29,8 @@ if __name__ == '__main__':
 		# endofdayhour = 16
 		# currenthour = 8 at 8am, 16 at 4pm
 		# (daysinweek - dayofweek) * 9 - (endofdayhour - currenthour) + 1
-		tweet_times_left = (4 - est[6]) * 9 + (16 - est[3])
+		tweet_times_left = (6 - est[6]) * 9 + (16 - est[3])
+		print "Tweet times left: %s" % tweet_times_left
 
 		auth = OAuth(env['TWITTER_OAUTH_TOKEN'], env['TWITTER_OAUTH_SECRET'],
 					 env['TWITTER_CONSUMER_KEY'], env['TWITTER_CONSUMER_SECRET'])
