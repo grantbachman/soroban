@@ -18,8 +18,10 @@ class DBConnection(object):
 		env = self.env
 		if env['ENV_MODE'] == 'production':
 			vars = (env['DBNAME'], env['USER'], env['PASSWORD'], env['HOST'])
+			print "in production"
 			return psycopg2.connect("dbname=%s user=%s password=%s host=%s" % vars)	
 		else:
+			print "not in production"
 			vars = (env['DBNAME'], env['HOST'])
 			return psycopg2.connect("dbname=%s host=%s" % vars)	
 
@@ -40,6 +42,7 @@ class DBConnection(object):
 			return -1
 
 	def save_tweet(self, symbol, target, raising_target):
+		print "trying to save tweet for %s with target of %s" % (symbol, target)
 		try:
 			self.connection.cursor().execute("""INSERT INTO tweets
 									(symbol, target, raising_target, created_at)

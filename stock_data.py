@@ -17,6 +17,7 @@ class Predict(object):
 
 	# Make find_raise/find_lower functions just one function
 	def find_raise_targets(self,lookback_days,up_min,up_max):
+		print "inside find_raise_targets"
 		bool_raise = self.prices.ix[-1]/self.prices.ix[lookback_days] - 1 > 0.2
 		raise_symbols = list(bool_raise.index[bool_raise==True])
 		s_raise_targets = self.prices.ix[-1][raise_symbols].apply(\
@@ -24,6 +25,7 @@ class Predict(object):
 		return s_raise_targets
 
 	def find_lower_targets(self,lookback_days,down_max,down_min):
+		print "inside find_lower_targets"
 		bool_lower = self.prices.ix[-1]/self.prices.ix[lookback_days] - 1 < -0.2
 		lower_symbols = list(bool_lower.index[bool_lower==True])
 		s_lower_targets = self.prices.ix[-1][lower_symbols].apply(\
@@ -31,13 +33,17 @@ class Predict(object):
 		return s_lower_targets
 
 	def save_targets(self, s_stocks, raise_target):
-		conn = DBConnection()	
+		print "inside save_targets"
+		conn = DBConnection()
 		for i in range(len(s_stocks)):
 			symbol = s_stocks.index[i]		
 			target = s_stocks[i]
 			successful = conn.save_tweet(symbol, target, raise_target)
 			if not successful:
+				print "somethoing went wrong saving %s" % symbol
 				return False
+			else:
+				print "Successfully saved %s with target of %s" % (symbol, target)
 		return True
 # For pulling and filtering stocks
 class StockData(object):
@@ -70,19 +76,22 @@ class StockData(object):
 		return prices
 
 	# Sets instance variables 'prices' and 'volumes' with market data
-	def set_histories(self, from_file=False):
+	def set_histories(self, from_file=False,num=1):
+		prices, volumes = {}, {}
 		if from_file == True:
 			prices = pd.read_csv('prices.csv', index_col=0)
 			volumes = pd.read_csv('volumes.csv', index_col=0)
 		else:
-			prices, volumes = pd.DataFrame(), pd.DataFrame()
-			stocks = self.retrieve_stock_list()
+			stocks = self.stock_list
+			x=0
 			for stock in stocks:
-				history = self.get_history(stock[0])	
-				if history is not None:
-					prices[stock[0]] = history["Adj Close"]
-					volumes[stock[0]] = history["Volume"]
-					prices, volumes = pd.DataFrame(prices), pd.DataFrame(volumes)
+				x=x+1
+				if x <= num:
+					history = self.get_history(stock[0])	
+					if history is not None:
+						prices[stock[0]] = history["Adj Close"]
+						volumes[stock[0]] = history["Volume"]
+			prices, volumes = pd.DataFrame(prices), pd.DataFrame(volumes)
 		self.prices = prices
 		self.volumes = volumes
 
